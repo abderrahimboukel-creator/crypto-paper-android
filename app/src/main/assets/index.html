@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1220">
+<title>FOREX AI SCALPER PRO — Crypto Terminal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Cairo:wght@400;500;600;700;800&display=swap');
+:root{--bg:#080e19;--panel:#101a2a;--panel2:#0d1726;--line:#213149;--muted:#8da0b8;--text:#e7eef8;--green:#19c784;--red:#ff5d70;--blue:#4e9cff;--gold:#f6bd4b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:'Cairo',sans-serif;font-size:13px}
+.num,.mono{font-family:'IBM Plex Mono',monospace;direction:ltr;unicode-bidi:embed}
+.panel{background:linear-gradient(145deg,#111d2e,#0d1726);border:1px solid var(--line);border-radius:13px}
+.muted{color:var(--muted)}.green{color:var(--green)}.red{color:var(--red)}.gold{color:var(--gold)}
+.btn{border:1px solid var(--line);border-radius:8px;padding:7px 11px;background:#17253a;color:#dce8f7;transition:.15s}.btn:hover{background:#223653}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-green{background:#0b684c;border-color:#168b67;color:#eafff6}.btn-red{background:#742b3a;border-color:#a83c50;color:#fff}
+.field{background:#091321;border:1px solid #2a3b54;border-radius:8px;padding:8px;color:#e7eef8;width:100%;outline:none}.field:focus{border-color:var(--blue)}
+.tab{padding:9px 12px;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap}.tab.active{border-color:var(--blue);color:#fff}
+.metric{font-family:'IBM Plex Mono',monospace;font-size:19px;direction:ltr;unicode-bidi:embed}
+.pill{font-size:10px;border-radius:99px;padding:3px 8px;background:#1b2a40;color:#b7c8dc}
+table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{padding:9px 10px;border-bottom:1px solid #1d2b40;text-align:right}th{color:#91a5bf;font-weight:600;font-size:11px;background:#101b2b;position:sticky;top:0}
+.scroll{overflow:auto;max-width:100%}.ticker{white-space:nowrap;overflow:hidden}.ticker span{display:inline-block;padding-inline:20px}
+.signal-card{border:1px solid var(--line);background:#0d1929;border-radius:11px;padding:13px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-left:5px}.live{background:var(--green);box-shadow:0 0 9px var(--green)}
+#chart{height:360px;width:100%}.small-label{font-size:10px;color:var(--muted)}
+@media(max-width:700px){#chart{height:290px}.metric{font-size:16px}.hide-mobile{display:none}.panel{border-radius:10px}}
+</style>
+</head>
+<body>
+<header class="border-b border-slate-800 bg-[#0b1422]">
+ <div class="max-w-[1600px] mx-auto px-3 py-3 flex flex-wrap items-center justify-between gap-3">
+  <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center font-bold text-white text-lg">A</div><div><div class="font-extrabold text-base tracking-wide">CRYPTO <span class="text-cyan-400">AI TERMINAL</span></div><div class="small-label">محرك تحليل وإشارات + تداول افتراضي</div></div></div>
+  <div class="flex items-center gap-3"><span class="text-xs muted"><i class="dot live"></i><span id="connectionText">جارٍ الاتصال...</span></span><span class="pill">PAPER MODE</span><span class="small-label num" id="clock">--:--:--</span></div>
+ </div>
+</header>
+<div class="bg-[#111c2c] border-b border-slate-800 ticker py-2 text-xs"><div id="ticker" class="inline-block"><span class="gold">تنبيه النظام:</span> يتم تحميل بيانات السوق العامة...</div></div>
+<main class="max-w-[1600px] mx-auto p-3 space-y-3">
+ <section class="grid grid-cols-2 md:grid-cols-4 gap-2">
+  <div class="panel p-3"><div class="small-label">رصيد المحفظة</div><div class="metric mt-1" id="balance">10,000.00</div><div class="small-label">USDT</div></div>
+  <div class="panel p-3"><div class="small-label">حقوق الملكية</div><div class="metric mt-1" id="equity">10,000.00</div><div class="small-label">الرصيد + الربح/الخسارة العائم</div></div>
+  <div class="panel p-3"><div class="small-label">الربح / الخسارة العائمة</div><div class="metric mt-1" id="unrealized">0.00</div><div class="small-label">USDT</div></div>
+  <div class="panel p-3"><div class="small-label">نسبة نجاح الصفقات</div><div class="metric mt-1" id="winrate">—</div><div class="small-label" id="tradeCount">0 صفقة مغلقة</div></div>
+ </section>
+ <section class="grid grid-cols-1 xl:grid-cols-12 gap-3">
+  <div class="xl:col-span-9 space-y-3">
+   <div class="panel p-3">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+     <div class="flex items-center gap-3 flex-wrap"><select id="symbolSelect" class="field !w-40 num"><option>BTCUSDT</option></select><div><div class="small-label">السعر الحالي</div><div class="metric text-2xl" id="lastPrice">—</div></div><div><div class="small-label">تغير 24 ساعة</div><div class="font-bold num" id="change24">—</div></div></div>
+     <div class="flex items-center gap-2"><button class="btn timeframe active" data-tf="15m">15m</button><button class="btn timeframe" data-tf="1h">1h</button><button class="btn timeframe" data-tf="4h">4h</button><button class="btn timeframe" data-tf="1d">1D</button></div>
+    </div>
+    <div class="grid grid-cols-3 md:grid-cols-6 gap-2 mb-3 text-xs">
+     <div><div class="small-label">أعلى 24س</div><div class="num" id="high24">—</div></div><div><div class="small-label">أدنى 24س</div><div class="num" id="low24">—</div></div><div><div class="small-label">حجم التداول</div><div class="num" id="volume24">—</div></div><div><div class="small-label">RSI 14</div><div class="num" id="rsiValue">—</div></div><div><div class="small-label">EMA 20</div><div class="num" id="emaValue">—</div></div><div><div class="small-label">ATR 14</div><div class="num" id="atrValue">—</div></div>
+    </div>
+    <div id="chart"></div><div class="flex flex-wrap gap-3 mt-2 small-label"><span><i class="dot" style="background:#4e9cff"></i>EMA 20</span><span><i class="dot" style="background:#f6bd4b"></i>EMA 50</span><span><i class="dot" style="background:#b48cff"></i>EMA 200</span><span id="chartStatus">بيانات الشموع من Binance</span></div>
+   </div>
+   <div class="panel p-3">
+    <div class="flex justify-between items-center mb-3"><h2 class="font-bold">توصيات المحرك الهجين</h2><button class="btn" id="refreshSignals">إعادة التحليل</button></div>
+    <div class="grid md:grid-cols-3 gap-2" id="signals"><div class="muted">جارٍ تحليل السوق...</div></div>
+    <div class="mt-3 text-xs muted leading-6" id="analysisText">تُبنى التوصيات من المؤشرات الفنية وبيانات الأخبار والخوف والطمع. هذه خوارزمية قواعدية تجريبية وليست نموذج ذكاء اصطناعي مدرّباً.</div>
+   </div>
+   <div class="panel p-3">
+    <div class="flex items-center justify-between mb-3"><h2 class="font-bold">الصفقات المفتوحة</h2><span class="pill" id="openCount">0 مفتوحة</span></div>
+    <div class="scroll"><table><thead><tr><th>الزوج</th><th>الاتجاه</th><th>الحجم</th><th>الدخول</th><th>السعر</th><th>رافعة</th><th>غير محقق</th><th>SL / TP</th><th></th></tr></thead><tbody id="openPositions"><tr><td colspan="9" class="muted text-center">لا توجد صفقات مفتوحة</td></tr></tbody></table></div>
+   </div>
+   <div class="panel p-3">
+    <h2 class="font-bold mb-3">سجل الصفقات</h2><div class="scroll"><table><thead><tr><th>الزوج</th><th>الاتجاه</th><th>الدخول</th><th>الخروج</th><th>النتيجة USDT</th><th>سبب الإغلاق</th><th>التاريخ</th></tr></thead><tbody id="history"><tr><td colspan="7" class="muted text-center">لا يوجد سجل بعد</td></tr></tbody></table></div>
+   </div>
+  </div>
+  <aside class="xl:col-span-3 space-y-3">
+   <div class="panel p-3">
+    <h2 class="font-bold mb-3">مؤشرات السوق</h2><div class="flex justify-between items-center py-2 border-b border-slate-800"><span class="muted">الخوف والطمع</span><strong class="num" id="fearValue">—</strong></div><div class="h-2 bg-slate-800 rounded-full mt-2 overflow-hidden"><div id="fearBar" class="h-full bg-amber-400" style="width:50%"></div></div><div class="text-center text-sm mt-2" id="fearLabel">جارٍ التحميل</div>
+    <div class="flex justify-between py-2 mt-2 border-t border-slate-800"><span class="muted">حالة التقلب</span><strong id="volatilityState">—</strong></div><div class="flex justify-between py-2 border-t border-slate-800"><span class="muted">تقييم الأخبار</span><strong id="newsScore">0</strong></div>
+   </div>
+   <div class="panel p-3">
+    <div class="flex justify-between items-center mb-3"><h2 class="font-bold">التداول الآلي الافتراضي</h2><span class="pill">AUTO PAPER</span></div>
+    <div class="flex items-center justify-between gap-2"><div><div class="font-semibold">التنفيذ التلقائي</div><div class="small-label">يفتح الصفقات الافتراضية المؤهلة دون تدخل</div></div><button id="autoToggle" class="btn btn-red">متوقف</button></div>
+    <div class="grid grid-cols-2 gap-2 mt-3">
+     <div><label class="small-label">أقل ثقة للتنفيذ (%)</label><input id="autoConfidence" type="number" min="60" max="90" step="1" value="75" class="field mt-1"></div>
+     <div><label class="small-label">نسبة المحفظة للدخول (%)</label><input id="autoAllocation" type="number" min="0.5" max="100" step="0.5" value="2" class="field mt-1"><div class="small-label mt-1">يمكن تخصيص حتى 100% من الرصيد للدخول. النسب المرتفعة تزيد مخاطر الخسارة.</div></div>
+     <div><label class="small-label">أقصى صفقات مفتوحة</label><select id="autoMaxOpen" class="field mt-1"><option>1</option><option selected>3</option><option>5</option><option>8</option></select></div>
+     <div><label class="small-label">حد التعرض من الرصيد</label><select id="autoExposure" class="field mt-1"><option value="10">10%</option><option value="20">20%</option><option value="25" selected>25%</option><option value="40">40%</option><option value="60">60%</option><option value="80">80%</option><option value="100">100%</option></select><div class="small-label mt-1">100% يسمح بحجز كامل الرصيد كهامش للصفقات المفتوحة، ويرفع المخاطر بشكل كبير.</div></div>
+    </div>
+    <button id="notifyEnable" class="btn w-full mt-3">تفعيل إشعارات المتصفح</button>
+    <div class="small-label mt-2" id="notifyStatus">الإشعارات داخل التطبيق مفعّلة دائماً؛ إشعارات المتصفح تتطلب الإذن.</div>
+    <div class="flex justify-between mt-3 text-xs"><span class="muted">حالة المحرك</span><b id="autoStatus" class="red">متوقف</b></div>
+    <div id="notificationFeed" class="mt-3 space-y-2 max-h-44 overflow-auto"><div class="small-label">لا توجد تنبيهات بعد</div></div>
+    <div class="mt-3 rounded-lg border border-slate-700 p-2">
+     <div class="small-label mb-2">حجم الصفقة التلقائي حسب رصيد المحفظة الحالي</div>
+     <div class="flex justify-between"><span class="muted">الهامش المحسوب للدخول</span><b class="num" id="autoMarginPreview">— USDT</b></div>
+     <div class="flex justify-between mt-1"><span class="muted">الخسارة التقديرية عند SL</span><b class="num red" id="autoLossPreview">— USDT</b></div>
+     <div class="flex justify-between mt-1"><span class="muted">الربح التقديري عند TP1</span><b class="num green" id="autoProfitPreview">— USDT</b></div>
+     <div class="small-label mt-2" id="autoSizingNote">تتغير القيم تلقائياً عند تغيير رصيد المحفظة أو نسبة الدخول أو التوصية.</div>
+    </div>
+    <p class="small-label mt-3 leading-5">التداول الآلي متوقف افتراضياً عند فتح التطبيق. اضغط «تشغيل التداول الآلي» للسماح بفتح صفقات افتراضية تلقائياً، أو «إيقاف التداول الآلي» لمنع فتح صفقات جديدة. حد الثقة تقدير خوارزمي وليس احتمال نجاح مثبتاً.</p>
+   </div>
+   <div class="panel p-3">
+    <h2 class="font-bold mb-3">تنفيذ يدوي — Paper</h2>
+    <label class="small-label">الزوج</label><input id="manualSymbol" class="field num mt-1 mb-2" value="BTCUSDT">
+    <div class="grid grid-cols-2 gap-2"><div><label class="small-label">الاتجاه</label><select id="manualSide" class="field mt-1"><option value="LONG">LONG شراء</option><option value="SHORT">SHORT بيع</option></select></div><div><label class="small-label">الرافعة</label><select id="manualLeverage" class="field mt-1"><option>1</option><option>2</option><option>3</option><option>5</option><option>10</option><option>20</option></select></div></div>
+    <label class="small-label block mt-2">الهامش المستخدم (USDT)</label><input id="manualMargin" type="number" min="1" value="100" class="field mt-1">
+    <div class="grid grid-cols-2 gap-2 mt-2"><div><label class="small-label">وقف الخسارة</label><input id="manualSL" type="number" class="field mt-1" placeholder="اختياري"></div><div><label class="small-label">هدف الربح</label><input id="manualTP" type="number" class="field mt-1" placeholder="اختياري"></div></div>
+    <button id="openManual" class="btn btn-green w-full mt-3">فتح الصفقة الافتراضية</button><p class="small-label mt-2">المحاكاة لا ترسل أوامر إلى Binance ولا تستخدم أموالاً حقيقية.</p>
+   </div>
+   <div class="panel p-3">
+    <h2 class="font-bold mb-3">إدارة المحفظة</h2><label class="small-label">تحديد رصيد المحفظة الافتراضي (USDT)</label><input id="newBalance" type="number" min="0" step="any" class="field mt-1" placeholder="أدخل أي رصيد تريده، مثلاً 50000"><button id="setBalance" class="btn w-full mt-2">اعتماد الرصيد الجديد</button><p class="small-label mt-2">يمكنك تغيير الرصيد في أي وقت. لا يمكن تخفيضه إلى أقل من الهامش المحجوز في الصفقات المفتوحة.</p><button id="resetAll" class="btn w-full mt-2 text-red-300">إعادة ضبط المحفظة والسجل</button><div class="grid grid-cols-2 gap-2 mt-3"><div class="bg-[#091321] rounded-lg p-2"><div class="small-label">صافي المحقق</div><div class="num mt-1" id="realized">0.00</div></div><div class="bg-[#091321] rounded-lg p-2"><div class="small-label">أفضل صفقة</div><div class="num mt-1" id="bestTrade">—</div></div></div>
+   </div>
+   <div class="panel p-3">
+    <div class="flex justify-between items-center mb-2"><h2 class="font-bold">آخر الأخبار</h2><button class="btn !px-2 !py-1" id="refreshNews">تحديث</button></div><div id="newsList" class="space-y-3"><div class="muted">جارٍ جلب الأخبار...</div></div><div class="small-label mt-3">المصدر: RSS عام عند توفره، مع أخبار احتياطية توضيحية عند تعذر الاتصال.</div>
+   </div>
+  </aside>
+ </section>
+ <footer class="text-center muted text-xs py-4">أداة تعليمية ومحاكاة فقط — لا تمثل نصيحة استثمارية ولا تضمن النتائج. بيانات الأسعار من واجهات Binance العامة.</footer>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), fmt=(n,d=2)=>Number.isFinite(+n)?(+n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const STORE='crypto_ai_terminal_v1';
+const UI_STORE='crypto_ai_terminal_ui_v1';
+function readStored(key,fallback={}){
+ const candidates=[];try{for(const store of [localStorage,sessionStorage]){try{const raw=store.getItem(key);if(raw){const parsed=JSON.parse(raw);if(parsed&&typeof parsed==='object')candidates.push(parsed)}}catch(e){}}}catch(e){}
+ if(!candidates.length)return fallback;
+ candidates.sort((a,b)=>(Number(b.savedAt)||0)-(Number(a.savedAt)||0));
+ return candidates[0];
+}
+function writeStored(key,value){
+ const raw=JSON.stringify(value);let saved=false;
+ try{localStorage.setItem(key,raw);saved=true}catch(e){console.warn('تعذر الحفظ الدائم عبر localStorage',e)}
+ try{sessionStorage.setItem(key,raw);saved=true}catch(e){console.warn('تعذر الحفظ الاحتياطي عبر sessionStorage',e)}
+ return saved;
+}
+const savedUIState=readStored(UI_STORE,{});
+const DEFAULT_SYMBOLS=['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','AVAXUSDT','DOGEUSDT','LINKUSDT','LTCUSDT','TRXUSDT'];
+const FALLBACK_NEWS=[
+ {title:'تذكير: تقلبات سوق الأصول الرقمية قد ترتفع مع صدور البيانات الاقتصادية',source:'Market Watch',url:'#',time:Date.now()},
+ {title:'متابعة تدفقات صناديق ETF والتطورات التنظيمية قد تؤثر في معنويات السوق',source:'Crypto Brief',url:'#',time:Date.now()-3600000},
+ {title:'إدارة المخاطر وتحديد حجم الصفقة عنصران أساسيان في التداول',source:'Risk Desk',url:'#',time:Date.now()-7200000}
+];
+class BinanceService{
+ constructor(){this.base='https://api.binance.com';this.ws=null;this.symbol='BTCUSDT';this.last={};this.klines=[];this.onPrice=()=>{};this.onKline=()=>{};this.onStatus=()=>{}}
+ async json(path){const r=await fetch(this.base+path,{cache:'no-store'});if(!r.ok)throw Error('Binance HTTP '+r.status);return r.json()}
+ async exchangeSymbols(){try{const d=await this.json('/api/v3/exchangeInfo');return d.symbols.filter(s=>s.quoteAsset==='USDT'&&s.status==='TRADING').map(s=>s.symbol)}catch(e){return DEFAULT_SYMBOLS}}
+ async ticker(s){return this.json('/api/v3/ticker/24hr?symbol='+encodeURIComponent(s))}
+ async candles(s,tf='15m',limit=500){const a=await this.json(`/api/v3/klines?symbol=${s}&interval=${tf}&limit=${limit}`);return a.map(k=>({time:Math.floor(k[0]/1000),open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}))}
+ connect(s){this.symbol=s;this.close();const streams=`${s.toLowerCase()}@ticker/${s.toLowerCase()}@kline_${UI.tf}`;try{this.ws=new WebSocket('wss://stream.binance.com:9443/stream?streams='+streams);this.ws.onopen=()=>this.onStatus(true);this.ws.onclose=()=>{this.onStatus(false);setTimeout(()=>{if(this.symbol===s)this.connect(s)},5000)};this.ws.onerror=()=>this.onStatus(false);this.ws.onmessage=e=>{try{const x=JSON.parse(e.data).data;if(x.e==='24hrTicker'){this.last.price=+x.c;this.onPrice(x)}else if(x.e==='kline'){this.onKline(x.k)}}catch(_){}}}catch(e){this.onStatus(false)}}
+ close(){if(this.ws){this.ws.onclose=null;this.ws.close();this.ws=null}}
+}
+class TechnicalIndicators{
+ static ema(a,p){if(a.length<p)return null;let k=2/(p+1),v=a.slice(0,p).reduce((x,y)=>x+y,0)/p;for(let i=p;i<a.length;i++)v=a[i]*k+v*(1-k);return v}
+ static emaSeries(a,p){if(a.length<p)return [];let k=2/(p+1),v=a.slice(0,p).reduce((x,y)=>x+y,0)/p,out=Array(p-1).fill(null).concat(v);for(let i=p;i<a.length;i++){v=a[i]*k+v*(1-k);out.push(v)}return out}
+ static rsi(a,p=14){if(a.length<=p)return null;let g=0,l=0;for(let i=1;i<=p;i++){let d=a[i]-a[i-1];if(d>0)g+=d;else l-=d}g/=p;l/=p;for(let i=p+1;i<a.length;i++){let d=a[i]-a[i-1];g=(g*(p-1)+Math.max(0,d))/p;l=(l*(p-1)+Math.max(0,-d))/p}return l===0?100:100-100/(1+g/l)}
+ static macd(a){const e12=this.ema(a,12),e26=this.ema(a,26);return e12==null||e26==null?null:e12-e26}
+ static atr(c,p=14){if(c.length<=p)return null;let tr=[];for(let i=1;i<c.length;i++)tr.push(Math.max(c[i].high-c[i].low,Math.abs(c[i].high-c[i-1].close),Math.abs(c[i].low-c[i-1].close)));return tr.slice(-p).reduce((x,y)=>x+y,0)/p}
+ static bollinger(a,p=20){if(a.length<p)return null;let x=a.slice(-p),m=x.reduce((u,v)=>u+v,0)/p,sd=Math.sqrt(x.reduce((u,v)=>u+(v-m)**2,0)/p);return {mid:m,upper:m+2*sd,lower:m-2*sd}}
+ static analyze(c){const a=c.map(x=>x.close),price=a.at(-1);return {price,rsi:this.rsi(a),ema20:this.ema(a,20),ema50:this.ema(a,50),ema200:this.ema(a,200),macd:this.macd(a),atr:this.atr(c),bb:this.bollinger(a),ema20s:this.emaSeries(a,20),ema50s:this.emaSeries(a,50),ema200s:this.emaSeries(a,200)}}
+}
+class NewsAndVolatilityService{
+ constructor(){this.news=FALLBACK_NEWS;this.fear=null;this.score=0;this.volatility='عادية';this.spike=false;this.previousPrice=null;this.previousVolume=null}
+ async loadFear(){try{const r=await fetch('https://api.alternative.me/fng/?limit=1');const j=await r.json();this.fear={value:+j.data[0].value,label:j.data[0].value_classification}}catch(e){this.fear={value:50,label:'محايد (احتياطي)'}}}
+ async loadNews(){const urls=['https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.coindesk.com%2Farc%2Foutboundfeeds%2Frss%2F%3FoutputType%3Dxml','https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fcointelegraph.com%2Frss'];for(const u of urls){try{const r=await fetch(u);const j=await r.json();if(j.items?.length){this.news=j.items.slice(0,8).map(x=>({title:x.title,source:j.feed?.title||'Crypto News',url:x.link,time:Date.parse(x.pubDate)||Date.now()}));break}}catch(e){}}
+ this.score=this.news.reduce((sum,n)=>sum+this.sentiment(n.title).score,0)/Math.max(1,this.news.length)}
+ sentiment(t){const s=t.toLowerCase();const positive=['etf','approval','approved','partnership','adoption','bullish','surge','rally','record high','rate cut','inflow','launch','اختراق','شراكة','موافقة','ارتفاع'];const negative=['sec','hack','hacked','lawsuit','ban','crash','bearish','liquidation','inflation','outflow','exploit','fraud','خسائر','حظر','اختراق أمني','هبوط'];let p=positive.filter(w=>s.includes(w)).length,n=negative.filter(w=>s.includes(w)).length;return {score:p===n?0:p>n?Math.min(1,p*.35):-Math.min(1,n*.35),label:p===n?'محايد':p>n?'إيجابي':'سلبي'}}
+ monitor(ticker,kline){const p=+ticker.c,v=+ticker.v;if(this.previousPrice){const move=Math.abs((p-this.previousPrice)/this.previousPrice)*100;const volRatio=this.previousVolume? v/this.previousVolume:1;this.spike=move>.7||volRatio>1.8;this.volatility=move>1.5?'مرتفعة جداً':move>.7?'مرتفعة':'عادية'}this.previousPrice=p;this.previousVolume=v}
+}
+class AISignalEngine{
+ constructor(news){this.news=news}
+ build(candles,tf,symbol){const x=TechnicalIndicators.analyze(candles);if(!x.price||x.rsi==null)return null;let score=0,why=[];if(x.price>x.ema20){score+=15;why.push('السعر أعلى EMA20')}else{score-=15;why.push('السعر أدنى EMA20')}if(x.ema20>x.ema50){score+=18;why.push('تقاطع/ترتيب المتوسطات إيجابي')}else{score-=18;why.push('ترتيب المتوسطات يميل للسلبية')}if(x.ema50>x.ema200){score+=12;why.push('الاتجاه العام أعلى EMA200')}else{score-=12;why.push('الاتجاه العام دون EMA200')}if(x.rsi>55){score+=12;why.push('RSI يدعم الزخم الصاعد')}else if(x.rsi<45){score-=12;why.push('RSI يشير إلى ضغط بيعي')}if(x.macd>0)score+=8;else score-=8;if(x.bb){if(x.price<x.bb.lower){score+=8;why.push('السعر قرب الحد السفلي للبولينجر')}if(x.price>x.bb.upper){score-=8;why.push('السعر قرب الحد العلوي للبولينجر')}}
+ const technical=score;const sentiment=this.news.score*30+(this.news.fear?((this.news.fear.value-50)/50)*8:0);score+=sentiment;let side=score>=0?'LONG':'SHORT';let confidence=Math.max(51,Math.min(89,50+Math.abs(score)*.42));const highVol=this.news.volatility!=='عادية';const atr=x.atr||x.price*.01;let slDist=Math.max(atr*(highVol?2.3:1.6),x.price*.003);let entry=x.price,sl=side==='LONG'?entry-slDist:entry+slDist;let tps=[1,1.8,2.7].map(r=>side==='LONG'?entry+slDist*r:entry-slDist*r);if(this.news.volatility==='مرتفعة جداً')confidence=Math.max(45,confidence-10);
+ return {symbol,tf,side,entry,sl,tps,rr:2.7,confidence,score,technical,why,rsi:x.rsi,ema20:x.ema20,atr,highVol,price:x.price,newsScore:this.news.score}}
+ // نقطة توسعة مستقبلية: يمكن إرسال عناوين الأخبار إلى Gemini/OpenAI من خادم وسيط آمن.
+ // لا تضع مفاتيح API السرية داخل ملف HTML أو JavaScript يعمل في المتصفح.
+}
+class PaperTradingEngine{
+ constructor(){this.load()}
+ load(){const d=readStored(STORE,{});this.balance=Number.isFinite(d.balance)&&d.balance>=0?d.balance:10000;this.initial=Number.isFinite(d.initial)&&d.initial>=0?d.initial:10000;this.open=Array.isArray(d.open)?d.open.filter(p=>p&&p.id!=null&&Number.isFinite(+p.entry)&&Number.isFinite(+p.margin)):[];this.history=Array.isArray(d.history)?d.history.filter(p=>p&&Number.isFinite(+p.pnl)):[]}
+ save(){writeStored(STORE,{version:3,balance:this.balance,initial:this.initial,open:this.open,history:this.history,savedAt:Date.now()})}
+ openTrade({symbol,side,margin,leverage,entry,sl,tp,source='يدوي'}){symbol=String(symbol||'').trim().toUpperCase();margin=+margin;leverage=+leverage;entry=+entry;sl=+sl||0;tp=+tp||0;if(!/^[A-Z0-9]{5,20}$/.test(symbol)||!['LONG','SHORT'].includes(side)||!Number.isFinite(entry)||entry<=0||!Number.isFinite(margin)||margin<=0||!Number.isFinite(leverage)||leverage<1||leverage>20)throw Error('تحقق من بيانات الصفقة');if(sl&&((side==='LONG'&&sl>=entry)||(side==='SHORT'&&sl<=entry)))throw Error('وقف الخسارة يجب أن يكون أسفل الدخول للشراء وأعلى الدخول للبيع');if(tp&&((side==='LONG'&&tp<=entry)||(side==='SHORT'&&tp>=entry)))throw Error('هدف الربح يجب أن يكون أعلى الدخول للشراء وأسفل الدخول للبيع');if(margin>this.balance)throw Error('الهامش أكبر من الرصيد المتاح');if(this.open.some(p=>p.symbol===symbol&&p.side===side))throw Error('توجد صفقة بالاتجاه نفسه لهذا الزوج');const qty=margin*leverage/entry;this.balance-=margin;const trade={id:Date.now()+Math.random(),symbol,side,margin,leverage,entry,qty,sl,tp,opened:Date.now(),source};this.open.push(trade);this.save();if(typeof notifyUser==='function')notifyUser('تم تنفيذ صفقة افتراضية',`${symbol} · ${side} · دخول ${fmt(entry,5)} · ثقة/مصدر: ${source}`,'success')}
+ pnl(p,price){return (p.side==='LONG'?price-p.entry:p.entry-price)*p.qty}
+ closeTrade(id,price,reason='إغلاق يدوي'){price=+price;if(!Number.isFinite(price)||price<=0)throw Error('سعر الإغلاق غير صالح');const i=this.open.findIndex(p=>p.id===id);if(i<0)return;const p=this.open.splice(i,1)[0],profit=this.pnl(p,price);this.balance+=p.margin+profit;this.history.unshift({...p,exit:price,pnl:profit,reason,closed:Date.now()});this.save();if(typeof notifyUser==='function')notifyUser('إغلاق صفقة افتراضية',`${p.symbol} · ${p.side} · ${reason} · النتيجة ${fmt(profit)} USDT`,profit>=0?'success':'warning')}
+ update(prices){for(const p of [...this.open]){const price=prices[p.symbol];if(!Number.isFinite(price))continue;let reason=null;if(p.side==='LONG'){if(p.sl&&price<=p.sl)reason='وقف الخسارة';else if(p.tp&&price>=p.tp)reason='جني الأرباح'}else{if(p.sl&&price>=p.sl)reason='وقف الخسارة';else if(p.tp&&price<=p.tp)reason='جني الأرباح'}const liq=p.side==='LONG'?p.entry*(1-1/p.leverage*.9):p.entry*(1+1/p.leverage*.9);if(!reason&&((p.side==='LONG'&&price<=liq)||(p.side==='SHORT'&&price>=liq)))reason='تصفية تقديرية';if(reason)this.closeTrade(p.id,price,reason)}this.save()}
+ unrealized(prices){return this.open.reduce((s,p)=>s+(prices[p.symbol]!=null?this.pnl(p,prices[p.symbol]):0),0)}
+}
+class UIManager{
+ constructor(){this.chart=null;this.candleSeries=null;this.ema20=null;this.ema50=null;this.ema200=null;this.prices={};this.currentCandles=[]}
+ initChart(){if(!window.LightweightCharts)return;$('chart').innerHTML='';this.chart=LightweightCharts.createChart($('chart'),{layout:{background:{color:'#0d1726'},textColor:'#91a5bf'},grid:{vertLines:{color:'#1b2a3e'},horzLines:{color:'#1b2a3e'}},rightPriceScale:{borderColor:'#2a3b54'},timeScale:{borderColor:'#2a3b54',timeVisible:true},crosshair:{mode:1},width:$('chart').clientWidth,height:$('chart').clientHeight});this.candleSeries=this.chart.addCandlestickSeries({upColor:'#19c784',downColor:'#ff5d70',borderUpColor:'#19c784',borderDownColor:'#ff5d70',wickUpColor:'#19c784',wickDownColor:'#ff5d70'});this.ema20=this.chart.addLineSeries({color:'#4e9cff',lineWidth:1});this.ema50=this.chart.addLineSeries({color:'#f6bd4b',lineWidth:1});this.ema200=this.chart.addLineSeries({color:'#b48cff',lineWidth:1});new ResizeObserver(()=>this.chart?.applyOptions({width:$('chart').clientWidth})).observe($('chart'))}
+ renderChart(c){if(!this.candleSeries)return;this.currentCandles=c;this.candleSeries.setData(c.map(({time,open,high,low,close})=>({time,open,high,low,close})));const a=c.map(x=>x.close);const lines=(period,series)=>{const v=TechnicalIndicators.emaSeries(a,period);series.setData(v.map((y,i)=>y==null?null:{time:c[i].time,value:y}).filter(Boolean))};lines(20,this.ema20);lines(50,this.ema50);lines(200,this.ema200);this.chart.timeScale().fitContent()}
+ updateIndicators(c){const x=TechnicalIndicators.analyze(c);$('rsiValue').textContent=fmt(x.rsi,1);$('emaValue').textContent=fmt(x.ema20);$('atrValue').textContent=fmt(x.atr,3)}
+ renderSignals(list){$('signals').innerHTML=list.map(s=>{if(!s)return '';const col=s.side==='LONG'?'green':'red';return `<article class="signal-card"><div class="flex justify-between items-center"><b>${s.tf==='15m'?'سريعة':s.tf==='4h'?'متوسطة':'طويلة'} · ${s.tf}</b><span class="pill">${s.confidence.toFixed(0)}% ثقة</span></div><div class="flex justify-between items-center mt-3"><strong class="${col} text-xl">${s.side}</strong><span class="small-label">${s.highVol?'⚠ تقلبات مرتفعة':'مخاطر اعتيادية'}</span></div><div class="grid grid-cols-2 gap-2 mt-3 text-xs"><div>الدخول <b class="num block">${fmt(s.entry,5)}</b></div><div>وقف SL <b class="num block red">${fmt(s.sl,5)}</b></div><div>TP1 <b class="num block green">${fmt(s.tps[0],5)}</b></div><div>TP2 <b class="num block green">${fmt(s.tps[1],5)}</b></div><div>TP3 <b class="num block green">${fmt(s.tps[2],5)}</b></div><div>R/R <b class="num block">${s.rr}:1</b></div></div><p class="small-label mt-3 leading-5">${s.why.join('، ')}. التقييم الهجين: ${s.score.toFixed(1)}.</p><button class="btn btn-green w-full mt-3" data-trade="${s.tf}">تنفيذ التوصية افتراضياً</button></article>`}).join('')}
+ renderTrading(engine){const prices=this.prices;const up=engine.unrealized(prices);$('balance').textContent=fmt(engine.balance);$('equity').textContent=fmt(engine.balance+engine.open.reduce((s,p)=>s+p.margin,0)+up);$('unrealized').textContent=fmt(up);$('unrealized').className='metric mt-1 '+(up>=0?'green':'red');$('openCount').textContent=engine.open.length+' مفتوحة';$('openPositions').innerHTML=engine.open.length?engine.open.map(p=>{const price=prices[p.symbol]||p.entry,pnl=engine.pnl(p,price);return `<tr><td class="num">${p.symbol}</td><td class="${p.side==='LONG'?'green':'red'}">${p.side}</td><td class="num">${fmt(p.margin*p.leverage)}</td><td class="num">${fmt(p.entry,5)}</td><td class="num">${fmt(price,5)}</td><td class="num">${p.leverage}x</td><td class="num ${pnl>=0?'green':'red'}">${fmt(pnl)}</td><td class="num">${p.sl?fmt(p.sl,5):'—'} / ${p.tp?fmt(p.tp,5):'—'}</td><td><button class="btn btn-red" data-close="${p.id}">إغلاق</button></td></tr>`}).join(''):'<tr><td colspan="9" class="muted text-center">لا توجد صفقات مفتوحة</td></tr>';
+ const h=engine.history;$('history').innerHTML=h.length?h.slice(0,100).map(p=>`<tr><td class="num">${p.symbol}</td><td>${p.side}</td><td class="num">${fmt(p.entry,5)}</td><td class="num">${fmt(p.exit,5)}</td><td class="num ${p.pnl>=0?'green':'red'}">${fmt(p.pnl)}</td><td>${p.reason}</td><td class="num">${new Date(p.closed).toLocaleString('en-GB')}</td></tr>`).join(''):'<tr><td colspan="7" class="muted text-center">لا يوجد سجل بعد</td></tr>';
+ const wins=h.filter(x=>x.pnl>0);$('winrate').textContent=h.length?fmt(wins.length/h.length*100,1)+'%':'—';$('tradeCount').textContent=h.length+' صفقة مغلقة';$('realized').textContent=fmt(h.reduce((s,p)=>s+p.pnl,0));$('bestTrade').textContent=h.length?fmt(Math.max(...h.map(p=>p.pnl))):'—'}
+ renderNews(news){$('newsList').innerHTML=news.slice(0,7).map(n=>{const sent=app.newsService.sentiment(n.title);return `<a href="${n.url}" target="_blank" rel="noopener" class="block border-b border-slate-800 pb-2 hover:text-cyan-300"><div class="text-xs leading-5">${n.title}</div><div class="flex justify-between mt-1 small-label"><span>${n.source}</span><span class="${sent.score>0?'green':sent.score<0?'red':'muted'}">${sent.label}</span></div></a>`}).join('')}
+ renderFear(f){$('fearValue').textContent=f.value+'/100';$('fearBar').style.width=f.value+'%';$('fearLabel').textContent=f.label;$('fearBar').style.background=f.value<25?'#ff5d70':f.value>75?'#19c784':'#f6bd4b'}
+}
+class AutoTrader{
+ constructor(){this.enabled=false;this.cooldowns={};this.feed=[];this.load()}
+ load(){const d=readStored('crypto_auto_trader_v1',{});this.enabled=false;this.cooldowns=d.cooldowns&&typeof d.cooldowns==='object'?d.cooldowns:{};this.feed=Array.isArray(d.feed)?d.feed.slice(0,12):[];this.settings={confidence:Number.isFinite(+d.confidence)?Math.max(60,Math.min(90,+d.confidence)):75,allocationPct:Number.isFinite(+d.allocationPct)?Math.max(.5,Math.min(100,+d.allocationPct)):2,maxOpen:[1,3,5,8].includes(+d.maxOpen)?+d.maxOpen:3,exposure:[10,20,25,40,60,80,100].includes(+d.exposure)?+d.exposure:25}}
+ save(){writeStored('crypto_auto_trader_v1',{autoStartVersion:4,enabled:false,cooldowns:this.cooldowns,feed:this.feed,...this.settings,savedAt:Date.now()})}
+ configure(){this.settings={confidence:Math.max(60,Math.min(90,+$('autoConfidence').value||75)),allocationPct:Math.max(.5,Math.min(100,+$('autoAllocation').value||2)),maxOpen:+$('autoMaxOpen').value||3,exposure:+$('autoExposure').value||25};this.save();this.updatePreview()}
+ render(){ $('autoToggle').textContent=this.enabled?'إيقاف التداول الآلي':'تشغيل التداول الآلي';$('autoToggle').className='btn '+(this.enabled?'btn-red':'btn-green');$('autoStatus').textContent=this.enabled?'يعمل — يسمح بفتح صفقات جديدة':'متوقف — لا يفتح صفقات جديدة';$('autoStatus').className=this.enabled?'green':'red';$('autoConfidence').value=this.settings.confidence;$('autoAllocation').value=this.settings.allocationPct;$('autoMaxOpen').value=String(this.settings.maxOpen);$('autoExposure').value=String(this.settings.exposure);this.updatePreview();this.renderFeed()}
+ addFeed(title,body,type='info'){this.feed.unshift({title,body,type,time:Date.now()});this.feed=this.feed.slice(0,12);this.save();this.renderFeed()}
+ renderFeed(){const el=$('notificationFeed');if(!el)return;el.innerHTML=this.feed.length?this.feed.map(n=>`<div class="border-b border-slate-800 pb-2"><div class="text-xs ${n.type==='success'?'green':n.type==='warning'?'gold':'muted'}">${n.title}</div><div class="small-label mt-1">${n.body}</div><div class="small-label mt-1 num">${new Date(n.time).toLocaleTimeString('en-GB')}</div></div>`).join(''):'<div class="small-label">لا توجد تنبيهات بعد</div>'}
+ getEntryMargin(){return Math.max(0,Math.min(trading.balance,trading.balance*this.settings.allocationPct/100))}
+ updatePreview(){const m=this.getEntryMargin();const s=(UI.signals||[]).filter(Boolean).sort((a,b)=>b.confidence-a.confidence)[0];$('autoMarginPreview').textContent=fmt(m)+' USDT';if(!s||!m||!s.price){$('autoLossPreview').textContent='— USDT';$('autoProfitPreview').textContent='— USDT';$('autoSizingNote').textContent='سيتم حساب الربح والخسارة عند توفر توصية وسعر ووقف خسارة وجني أرباح.';return}const lev=s.highVol?2:3,qty=m*lev/s.price;const loss=(s.side==='LONG'?s.sl-s.price:s.price-s.sl)*qty;const profit=(s.side==='LONG'?s.tps[0]-s.price:s.price-s.tps[0])*qty;$('autoLossPreview').textContent=fmt(-Math.abs(loss))+' USDT';$('autoProfitPreview').textContent=fmt(Math.abs(profit))+' USDT';$('autoSizingNote').textContent=`على أساس ${fmt(trading.balance)} USDT رصيداً، ${this.settings.allocationPct}% دخول، ورافعة ${lev}x. القيم تقديرية قبل الرسوم والانزلاق.`}
+ consider(s){if(!this.enabled||!s||s.confidence<this.settings.confidence)return false;
+  const key=s.symbol+'|'+s.tf+'|'+s.side,now=Date.now();if(this.cooldowns[key]&&now-this.cooldowns[key]<4*60*60*1000)return false;
+  if(trading.open.length>=this.settings.maxOpen)return false;
+  if(trading.open.some(p=>p.symbol===s.symbol))return false;
+  const margin=this.getEntryMargin();const used=trading.open.reduce((sum,p)=>sum+p.margin,0),equity=trading.balance+used;if(margin<=0||used+margin>equity*this.settings.exposure/100||margin>trading.balance)return false;
+  const leverage=s.highVol?2:3;
+  try{trading.openTrade({symbol:s.symbol,side:s.side,margin,leverage,entry:s.price,sl:s.sl,tp:s.tps[0],source:`AUTO AI ${s.tf} (${s.confidence.toFixed(0)}%)`});this.cooldowns[key]=now;this.save();this.addFeed('تنفيذ تلقائي ناجح',`${s.symbol} · ${s.side} · ثقة ${s.confidence.toFixed(0)}% · هامش ${fmt(margin)} USDT (${this.settings.allocationPct}% من المحفظة)`,'success');ui.renderTrading(trading);this.updatePreview();return true}catch(e){this.addFeed('تعذر تنفيذ التوصية',`${s.symbol}: ${e.message}`,'warning');return false}
+ }
+}
+function notifyUser(title,body,type='info'){if(typeof autoTrader!=='undefined')autoTrader.addFeed(title,body,type);try{if('Notification'in window&&Notification.permission==='granted'){const n=new Notification(title,{body,tag:'crypto-'+Date.now()});n.onclick=()=>{window.focus();n.close()}}}catch(e){}showTickerMessage(`${title}: ${body}`)}
+const binance=new BinanceService(),newsService=new NewsAndVolatilityService(),trading=new PaperTradingEngine(),engine=new AISignalEngine(newsService),ui=new UIManager(),autoTrader=new AutoTrader();
+const validTimeframes=['15m','1h','4h','1d'];
+const UI={tf:validTimeframes.includes(savedUIState.tf)?savedUIState.tf:'15m',symbol:/^[A-Z0-9]{5,20}$/.test(savedUIState.symbol||'')?savedUIState.symbol:'BTCUSDT',candlesByTf:{},signals:[]};
+function saveUIState(){writeStored(UI_STORE,{symbol:UI.symbol,tf:UI.tf,savedAt:Date.now()})}
+window.UI=UI;window.app={newsService};
+async function loadMarket(){const requestedSymbol=UI.symbol;try{const t=await binance.ticker(requestedSymbol);if(requestedSymbol!==UI.symbol)return;ui.prices[requestedSymbol]=+t.lastPrice;updateTicker(t);await loadCandles(UI.tf);if(requestedSymbol!==UI.symbol)return;binance.connect(requestedSymbol);$('connectionText').textContent='متصل ببيانات REST';}catch(e){if(requestedSymbol===UI.symbol){$('connectionText').textContent='تعذر جلب البيانات — تحقق من الاتصال';$('chartStatus').textContent=e.message}}}
+function updateTicker(t){$('lastPrice').textContent=fmt(t.lastPrice, +t.lastPrice<1?6:2);const ch=+t.priceChangePercent;$('change24').textContent=(ch>=0?'+':'')+fmt(ch,2)+'%';$('change24').className='font-bold num '+(ch>=0?'green':'red');$('high24').textContent=fmt(t.highPrice);$('low24').textContent=fmt(t.lowPrice);$('volume24').textContent=fmt(t.quoteVolume/1e6,2)+'M';}
+async function loadCandles(tf){const requestedSymbol=UI.symbol;try{const c=await binance.candles(requestedSymbol,tf,500);if(requestedSymbol!==UI.symbol||tf!==UI.tf)return;UI.candlesByTf[tf]=c;ui.renderChart(c);ui.updateIndicators(c);makeSignals();}catch(e){if(requestedSymbol===UI.symbol&&tf===UI.tf)$('chartStatus').textContent='تعذر تحميل الشموع: '+e.message}}
+let signalRunToken=0;async function makeSignals(){const runToken=++signalRunToken;const selectedSymbol=UI.symbol;const frames=['15m','4h','1d'];const results=[];for(const tf of frames){let c=UI.candlesByTf[tf];if(!c){try{c=await binance.candles(UI.symbol,tf,300);UI.candlesByTf[tf]=c}catch(e){results.push(null);continue}}results.push(engine.build(c,tf,UI.symbol))}if(runToken!==signalRunToken||selectedSymbol!==UI.symbol)return;UI.signals=results;ui.renderSignals(results);if(typeof autoTrader!=='undefined')autoTrader.updatePreview();if(autoTrader.enabled)results.filter(Boolean).forEach(s=>autoTrader.consider(s));let s=results.filter(Boolean)[0];$('analysisText').textContent=s?`القراءة الحالية لـ ${UI.symbol}: ${s.side}. ${s.why.join('؛ ')}. الأخبار: ${newsService.score>0?'ميل إيجابي':newsService.score<0?'ميل سلبي':'محايدة'}، ومؤشر الخوف والطمع ${newsService.fear?.value??'غير متاح'}/100. وزن التحليل الفني 70% والعوامل الخارجية 30% وفق نموذج قواعدي مبسط. الثقة تقدير خوارزمي غير مختبر إحصائياً ولا تعني احتمال نجاح حقيقي.`:'بيانات غير كافية لإصدار إشارة.'}
+let universeScanRunning=false;async function scanUniverse(){if(!autoTrader.enabled||universeScanRunning)return;universeScanRunning=true;try{const symbols=[...new Set([...DEFAULT_SYMBOLS,UI.symbol])];for(const symbol of symbols){if(!autoTrader.enabled)break;for(const tf of ['15m','4h','1d']){try{const c=await binance.candles(symbol,tf,300);const s=engine.build(c,tf,symbol);if(s)autoTrader.consider(s)}catch(e){/* تخطي الزوج/الفريم عند تعذر البيانات */}}}ui.renderTrading(trading)}finally{universeScanRunning=false}}
+async function refreshOpenPositionPrices(){const symbols=[...new Set(trading.open.map(p=>p.symbol))];for(const s of symbols){try{const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+s);if(r.ok){const j=await r.json();ui.prices[s]=+j.price}}catch(e){}}trading.update(ui.prices);ui.renderTrading(trading)}
+function showTickerMessage(msg){$('ticker').innerHTML=`<span class="gold">تنبيه:</span> ${msg} <span>•</span> <span>تحقق من مستويات المخاطرة قبل أي محاكاة</span>`}
+let appInitialized=false;
+async function init(){if(appInitialized)return;appInitialized=true;ui.initChart();const symbols=await binance.exchangeSymbols();$('symbolSelect').innerHTML=[...new Set([...DEFAULT_SYMBOLS,...symbols])].filter(s=>s.endsWith('USDT')).map(s=>`<option value="${s}">${s}</option>`).join('');if(!$('symbolSelect').querySelector(`option[value="${UI.symbol}"]`))UI.symbol='BTCUSDT';$('symbolSelect').value=UI.symbol;$('manualSymbol').value=UI.symbol;document.querySelectorAll('.timeframe').forEach(b=>b.classList.toggle('active',b.dataset.tf===UI.tf));await Promise.all([newsService.loadFear(),newsService.loadNews()]);ui.renderFear(newsService.fear);ui.renderNews(newsService.news);$('newsScore').textContent=(newsService.score*100).toFixed(0);autoTrader.render();await loadMarket();await refreshOpenPositionPrices();ui.renderTrading(trading);setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-GB')},1000);setInterval(async()=>{try{const t=await binance.ticker(UI.symbol);ui.prices[UI.symbol]=+t.lastPrice;updateTicker(t);trading.update(ui.prices);ui.renderTrading(trading)}catch(e){}await refreshOpenPositionPrices()},5000);setInterval(async()=>{await newsService.loadFear();await newsService.loadNews();ui.renderFear(newsService.fear);ui.renderNews(newsService.news);$('newsScore').textContent=(newsService.score*100).toFixed(0);makeSignals()},180000);setInterval(scanUniverse,180000);autoTrader.render();}
+$('symbolSelect').addEventListener('change',async e=>{UI.symbol=e.target.value;saveUIState();$('manualSymbol').value=UI.symbol;UI.candlesByTf={};await loadMarket()});
+document.querySelectorAll('.timeframe').forEach(b=>b.addEventListener('click',async()=>{document.querySelectorAll('.timeframe').forEach(x=>x.classList.remove('active'));b.classList.add('active');UI.tf=b.dataset.tf;saveUIState();binance.close();await loadCandles(UI.tf);binance.connect(UI.symbol)}));
+binance.onPrice=t=>{ui.prices[UI.symbol]=+t.c;updateTicker({lastPrice:t.c,priceChangePercent:t.P,highPrice:t.h,lowPrice:t.l,quoteVolume:t.q});trading.update(ui.prices);ui.renderTrading(trading)};
+binance.onKline=k=>{const c=UI.candlesByTf[UI.tf];if(!c)return;const bar={time:Math.floor(k.t/1000),open:+k.o,high:+k.h,low:+k.l,close:+k.c,volume:+k.v};const last=c[c.length-1];if(last&&last.time===bar.time)c[c.length-1]=bar;else c.push(bar);if(ui.candleSeries)ui.candleSeries.update({time:bar.time,open:bar.open,high:bar.high,low:bar.low,close:bar.close});ui.updateIndicators(c);newsService.monitor({c:+k.c,v:+k.v},k);if(newsService.spike)showTickerMessage(`رصد حركة أو حجم تداول غير اعتيادي على ${UI.symbol} — التقلبات ${newsService.volatility}`);if(k.x)makeSignals()};
+binance.onStatus=ok=>{$('connectionText').innerHTML=ok?'<i class="dot live"></i> WebSocket مباشر':'إعادة الاتصال...'};
+$('refreshSignals').onclick=makeSignals;$('refreshNews').onclick=async()=>{await newsService.loadNews();ui.renderNews(newsService.news)};
+$('autoToggle').onclick=()=>{autoTrader.configure();autoTrader.enabled=!autoTrader.enabled;autoTrader.save();autoTrader.render();if(autoTrader.enabled){notifyUser('تم تشغيل التداول الآلي','تم منح الإذن بفتح الصفقات الافتراضية تلقائياً عند تحقق الشروط.','success');scanUniverse()}else{notifyUser('تم إيقاف التداول الآلي','لن تُفتح صفقات آلية جديدة؛ الصفقات الحالية ستظل تحت المراقبة حتى SL أو TP أو الإغلاق اليدوي.','warning')}};
+['autoConfidence','autoAllocation','autoMaxOpen','autoExposure'].forEach(id=>$(id).addEventListener('change',()=>{autoTrader.configure();autoTrader.render()}));
+$('notifyEnable').onclick=async()=>{if(!('Notification'in window)){ $('notifyStatus').textContent='هذا المتصفح لا يدعم إشعارات النظام.';return}try{const permission=await Notification.requestPermission();$('notifyStatus').textContent=permission==='granted'?'تم السماح بإشعارات المتصفح.':permission==='denied'?'تم رفض الإشعارات؛ ستظل التنبيهات داخل التطبيق ظاهرة.':'لم يتم منح الإذن بعد.';if(permission==='granted')notifyUser('الإشعارات مفعّلة','ستصلك تنبيهات تنفيذ وإغلاق الصفقات الافتراضية.','success')}catch(e){$('notifyStatus').textContent='تعذر طلب الإذن؛ استخدم التنبيهات داخل التطبيق.'}};
+$('signals').addEventListener('click',e=>{const b=e.target.closest('[data-trade]');if(!b)return;const s=UI.signals.find(x=>x&&x.tf===b.dataset.trade);if(!s)return;try{trading.openTrade({symbol:s.symbol,side:s.side,margin:100,leverage:s.highVol?2:3,entry:s.price,sl:s.sl,tp:s.tps[0],source:'توصية '+s.tf});ui.renderTrading(trading)}catch(err){alert(err.message)}});
+$('openManual').onclick=()=>{try{const symbol=$('manualSymbol').value.trim().toUpperCase(),price=ui.prices[symbol]||(symbol===UI.symbol?+ $('lastPrice').textContent.replaceAll(',',''):NaN);if(!Number.isFinite(price)||price<=0)throw Error('لا يوجد سعر مباشر لهذا الزوج حالياً. اختر الزوج المعروض أو انتظر تحميل السعر.');trading.openTrade({symbol,side:$('manualSide').value,margin:+$('manualMargin').value,leverage:+$('manualLeverage').value,entry:price,sl:$('manualSL').value,tp:$('manualTP').value});ui.renderTrading(trading)}catch(e){alert(e.message)}};
+$('openPositions').addEventListener('click',e=>{const b=e.target.closest('[data-close]');if(!b)return;const p=trading.open.find(x=>String(x.id)===b.dataset.close);if(p)trading.closeTrade(p.id,ui.prices[p.symbol]||p.entry);ui.renderTrading(trading)});
+$('setBalance').onclick=()=>{const v=+$('newBalance').value;if(!Number.isFinite(v)||v<0)return alert('أدخل رصيداً صحيحاً');const used=trading.open.reduce((s,p)=>s+p.margin,0);if(v<used)return alert('الرصيد الجديد أقل من الهامش المحجوز للصفقات المفتوحة');trading.balance=v;trading.initial=v;trading.save();$('newBalance').value='';ui.renderTrading(trading);autoTrader.updatePreview();if(!readStored(STORE,null))alert('تنبيه: قد لا يسمح المتصفح بالتخزين المحلي؛ تحقق من إعدادات بيانات المواقع.');};
+$('resetAll').onclick=()=>{if(!confirm('هل تريد حذف جميع الصفقات وإعادة الرصيد إلى 10,000 USDT؟'))return;trading.balance=10000;trading.initial=10000;trading.open=[];trading.history=[];trading.save();ui.renderTrading(trading);autoTrader.updatePreview()};
+function persistAllState(){saveUIState();trading.save();autoTrader.save()}
+window.addEventListener('pagehide',()=>{persistAllState();binance.close()});
+window.addEventListener('beforeunload',persistAllState);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistAllState()});
+init();
+</script>
+</body>
+</html>
